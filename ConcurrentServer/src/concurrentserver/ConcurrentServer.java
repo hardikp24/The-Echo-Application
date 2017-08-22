@@ -2,8 +2,11 @@ package concurrentserver;
 import javax.swing.*;
 import java.net.*;
 import java.io.*;
+import java.util.*;
 
 public class ConcurrentServer {
+    
+    static ArrayList<PrintWriter> al = new ArrayList();
    
     public static void main(String[] args) throws Exception {
         
@@ -47,11 +50,20 @@ class Conversion extends Thread{
             BufferedReader nis = new BufferedReader(new InputStreamReader(soc.getInputStream()));
             PrintWriter nos = new PrintWriter(new BufferedWriter(new OutputStreamWriter(soc.getOutputStream())), true);
             
+            ConcurrentServer.al.add(nos);
+            
             String s = nis.readLine();
             while(!s.equals("end")){
                 System.out.println("server received "+s);
                 ta.append(s+"\n");
-                nos.println(s);
+                
+                //nos.println(s);
+                
+                //to pass msg to all client's screen
+                for(PrintWriter o: ConcurrentServer.al){
+                    o.println(s);
+                }
+                
                 s = nis.readLine();
             }            
             nos.println("end");            
