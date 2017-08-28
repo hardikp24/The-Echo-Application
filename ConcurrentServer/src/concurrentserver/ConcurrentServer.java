@@ -3,15 +3,21 @@ import javax.swing.*;
 import java.net.*;
 import java.io.*;
 import java.util.*;
+//import static MessageQueue.messagequeue;
 
 public class ConcurrentServer {
     
-    static ArrayList<PrintWriter> al = new ArrayList();
+    public static MessageQueue<String> q = new MessageQueue();
+    
+    public static ArrayList<PrintWriter> al = new ArrayList();
    
     public static void main(String[] args) throws Exception {
-        
-         
         System.out.println("Server Signinig in");
+        
+        MessageDispatcher md = new MessageDispatcher(); 
+        md.setDaemon(true);
+        md.start();
+        
         
         ServerSocket ss = new ServerSocket(9081);
         for (int i = 0; i < 10; i++) {
@@ -60,9 +66,10 @@ class Conversion extends Thread{
                 //nos.println(s);
                 
                 //to pass msg to all client's screen
-                for(PrintWriter o: ConcurrentServer.al){
-                    o.println(s);
-                }
+//                for(PrintWriter o: ConcurrentServer.al){
+//                    o.println(s);
+//                }
+                ConcurrentServer.q.enqueue(s);
                 
                 s = nis.readLine();
             }            
@@ -74,3 +81,56 @@ class Conversion extends Thread{
         
     }
 }
+
+
+
+class MessageQueue<T> {
+//arraylist bcz its dynamic ds.
+    ArrayList<T> al = new ArrayList();
+
+    synchronized void enqueue(T s){
+        al.add(s);
+        notify();
+    }
+
+    synchronized T dequeue() throws Exception {
+        if(al.isEmpty()){
+            wait();
+            return null;
+        } 
+        else {return al.remove(0); //removing first element 
+        }        
+    }
+
+    synchronized void print(){
+        for(T  s : al){
+            System.out.println(s);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "MessageQueue{" + "al=" + al + '}';
+    }
+ 
+}
+
+class MessageDispatcher extends Thread {
+    
+    boolean flag = true;
+    
+    public void run(){
+        try{
+            while(flag){
+                String s = ConcurrentServer.q.dequeue();
+                for(PrintWriter o : ConcurrentServer.al){
+                    o.println(s);
+                }
+                
+            }
+        }
+        catch(Exception e){}
+    }
+
+}
+
